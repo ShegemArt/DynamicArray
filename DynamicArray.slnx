@@ -1,0 +1,8 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="ArrayTests/ArrayTests.vcxproj" Id="af978937-3da4-4bfb-82e5-465b2153b574" />
+  <Project Path="DynamicArray/DynamicArray.vcxproj" Id="eda99ffc-45e5-4e41-bcc8-e81d811b5585" />
+</Solution>
