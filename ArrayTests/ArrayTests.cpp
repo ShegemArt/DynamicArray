@@ -958,3 +958,54 @@ TEST_F(ArrayLifetimeTest, AssignmentDestroysOldContentOfTarget)
     target = std::move(other);
     EXPECT_EQ(Counted::aliveCount, 4);
 }
+
+class CopyOnly
+{
+public:
+    int value;
+
+    explicit CopyOnly(int v) : value(v)
+    {
+    }
+
+    CopyOnly(const CopyOnly& other) : value(other.value)
+    {
+    }
+
+    CopyOnly(CopyOnly&&) = delete;
+
+    CopyOnly& operator=(const CopyOnly&) = delete;
+    CopyOnly& operator=(CopyOnly&&) = delete;
+};
+
+TEST(ArrayCopyOnlyTest, InsertRemoveAndGrowthUseCopyConstruction)
+{
+    Array<CopyOnly> a(1);
+
+    CopyOnly first(1);
+    CopyOnly second(2);
+    CopyOnly third(3);
+
+    // Вставка первого элемента
+    a.insert(first);
+
+    // Перевыделение памяти
+    a.insert(second);
+
+    // Вставка в середину со сдвигом элементов
+    a.insert(1, third);
+
+    ASSERT_EQ(a.size(), 3);
+
+    EXPECT_EQ(a[0].value, 1);
+    EXPECT_EQ(a[1].value, 3);
+    EXPECT_EQ(a[2].value, 2);
+
+    // Удаление со сдвигом элементов
+    a.remove(1);
+
+    ASSERT_EQ(a.size(), 2);
+
+    EXPECT_EQ(a[0].value, 1);
+    EXPECT_EQ(a[1].value, 2);
+}

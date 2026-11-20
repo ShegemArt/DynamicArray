@@ -31,7 +31,11 @@ public:
     // Вызывает деструкторы всех элементов, затем освобождает блок памяти
     ~Array()
     {
-        std::destroy(m_data, m_data + m_size);
+        if (m_data != nullptr)
+        {
+            std::destroy_n(m_data, m_size);
+        }
+
         std::free(m_data);
     }
 
@@ -40,14 +44,18 @@ public:
     {
         m_data = allocate(m_capacity);
 
-        try
-        {
-            std::uninitialized_copy(other.m_data, other.m_data + other.m_size, m_data);
-        }
-        catch (...)
-        {
-            std::free(m_data);
-            throw;
+        if (other.m_size > 0) {
+            try
+            {
+                std::uninitialized_copy_n(other.m_data, other.m_size, m_data);
+            }
+            catch (...)
+            {
+                std::free(m_data);
+                m_data = nullptr;
+                m_capacity = 0;
+                throw;
+            }
         }
 
         m_size = other.m_size;
@@ -195,11 +203,11 @@ public:
 
         for (int i = m_size; i > index; --i)
         {
-            std::construct_at(m_data + i, std::move(m_data[i - 1]));
+            std::construct_at(m_data + i, std::move_if_noexcept(m_data[i - 1]));
             std::destroy_at(m_data + i - 1);
         }
 
-        std::construct_at(m_data + index, std::move(tmp));
+        std::construct_at(m_data + index, std::move_if_noexcept(tmp));
         ++m_size;
 
         return index;
@@ -214,7 +222,7 @@ public:
 
         for (int i = index; i < m_size - 1; ++i)
         {
-            std::construct_at(m_data + i, std::move(m_data[i + 1]));
+            std::construct_at(m_data + i, std::move_if_noexcept(m_data[i + 1]));
             std::destroy_at(m_data + i + 1);
         }
 
@@ -280,7 +288,7 @@ public:
     // Указатель на место после последнего элемента для range-for
     T* end()
     {
-        return m_data + m_size;
+        return m_size == 0 ? m_data : m_data + m_size;
     }
 
     // Константный указатель на первый элемент для range-for
@@ -292,7 +300,7 @@ public:
     // Константный указатель на место после последнего элемента для range-for
     const T* end() const
     {
-        return m_data + m_size;
+        return m_size == 0 ? m_data : m_data + m_size;
     }
 
     // Константный указатель на первый элемент
@@ -304,7 +312,7 @@ public:
     // Константный указатель на место после последнего элемента
     const T* cend() const
     {
-        return m_data + m_size;
+        return m_size == 0 ? m_data : m_data + m_size;
     }
 
 private:
@@ -342,17 +350,27 @@ private:
     {
         T* newData = allocate(newCapacity);
 
+        int constructed = 0;
+
         try
         {
-            std::uninitialized_move(m_data, m_data + m_size, newData);
+            for (; constructed < m_size; ++constructed)
+            {
+                std::construct_at(newData + constructed, std::move_if_noexcept(m_data[constructed]));
+            }
         }
         catch (...)
         {
+            std::destroy_n(newData, constructed);
             std::free(newData);
             throw;
         }
 
-        std::destroy(m_data, m_data + m_size);
+        if (m_size > 0)
+        {
+            std::destroy_n(m_data, m_size);
+        }
+
         std::free(m_data);
 
         m_data = newData;
