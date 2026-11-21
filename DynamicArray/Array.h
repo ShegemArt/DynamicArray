@@ -22,13 +22,13 @@ public:
     {
     }
 
-    // Создает массив с заданной емкостью, значение меньше 1 заменяется на 1
+    // Создает массив с заданной емкостью
     explicit Array(int capacity) : m_capacity(capacity > 0 ? capacity : 1)
     {
         m_data = allocate(m_capacity);
     }
 
-    // Вызывает деструкторы всех элементов, затем освобождает блок памяти
+    // Деструктор
     ~Array()
     {
         if (m_data != nullptr)
@@ -84,7 +84,7 @@ public:
             return (*m_array)[m_index];
         }
 
-        // Записывает значение в текущую позицию, доступно только обычному итератору
+        // Записывает значение в текущую позицию
         void set(const T& value) requires (!IsConst)
         {
             assert(hasNext());
@@ -111,14 +111,14 @@ public:
             return (*m_array)[m_index];
         }
 
-        // Префиксный инкремент, то же что next()
+        // Префиксный инкремент
         BasicIterator& operator++()
         {
             next();
             return *this;
         }
 
-        // Постфиксный инкремент, возвращает итератор до перехода
+        // Постфиксный инкремент
         BasicIterator operator++(int)
         {
             BasicIterator old = *this;
